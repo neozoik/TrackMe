@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import imutils
+import hickle as hkl
 
 def getCamFeed():
     return cv2.VideoCapture(0)
@@ -35,21 +36,31 @@ if __name__ == '__main__':
 
             # dilate the thresholded image to fill in holes, then find contours
             # on thresholded image
-            thresh = cv2.dilate(thresh, None, iterations=10)
+            thresh = cv2.dilate(thresh, None, iterations=15)
             (cnts, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
             	cv2.CHAIN_APPROX_SIMPLE)
 
+            #gcnts = groupContours(cnts)
 
+            if len(cnts) > 4:
+                hkl.dump(cnts,'data/cnts.pkl')
+                cv2.imwrite('data/frame.png',frame)
+                break
             # loop over the contours
+            MAX_AREA = -1
             for c in cnts:
             	# if the contour is too small, ignore it
-            	if cv2.contourArea(c) < 200:
-            		continue
+                cA = cv2.contourArea(c)
+            	if cA > 200 and cA > MAX_AREA:
+                    MAX_AREA = cA
+                    maxC = c
 
-            	# compute the bounding box for the contour, draw it on the frame,
-            	# and update the text
-            	(x, y, w, h) = cv2.boundingRect(c)
-            	cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        	# compute the bounding box for the contour, draw it on the frame,
+        	# and update the text
+        	(x, y, w, h) = cv2.boundingRect(maxC)
+        	cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+
             # show the frame and record if the user presses a key
             cv2.imshow("Security Feed", frame)
 
@@ -59,5 +70,6 @@ if __name__ == '__main__':
             if key == ord("q"):
             	break
 
-    cap.release()
+
+    cam_feed.release()
     cv2.destroyAllWindows()
