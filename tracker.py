@@ -25,16 +25,27 @@ if __name__ == '__main__':
     # previous frame
     prev_frame = None
 
+    frame_num = 0
+    avg_x = []
+    avg_y = []
+
+    # setup params
+    H = 300
+    W = 100
+
     while True:
         # get a frame
         (active,frame) = cam_feed.read()
 
         if active:
+            frame_num += 1
             # resize the frame, convert it to grayscale, and blur it
             frame = imutils.resize(frame, width=500)
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
+            W0 = frame.shape[0]
+ 
                 # if the first frame is None, initialize it
             if prev_frame is None:
                 prev_frame = gray
@@ -56,7 +67,7 @@ if __name__ == '__main__':
             for c in cnts:
                 # if the contour is too small, ignore it
                 cA = cv2.contourArea(c)
-                if cA > 200 and cA > MAX_AREA:
+                if cA > 300 and cA > MAX_AREA:
                     MAX_AREA = cA
                     maxC = c
 
@@ -65,18 +76,31 @@ if __name__ == '__main__':
             if maxC is not None:
                 (x, y, w, h) = cv2.boundingRect(maxC)
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                H = 500
-                W = 300
-                map = np.zeros([H,W])
                 #_x = 1 - ( (MAX_AREA/(frame.shape[0]*frame.shape[1]))**2 )
-                _x = 997.15*32/w
-                W0 = frame.shape[0]
-                cv2.circle(map,( int((x + w/2)*100/W0),int(_x)) ,5,(255,0,0),-1)
-                print int((x+w/2)*100/W0),int(_x)
+
+                _y = 997.15*32/w
+                _x = (x + w/2)*100/W0
+                avg_x.append(_x)
+                avg_y.append(_y)
+
+                if len(avg_x) > 5:
+                    if _y > H:
+                        H = min(700,int(_y) + 1)
+                    if _x > W:
+                        W = min(400,int(_x) + 1)
+                    map = np.zeros([H,W])
+                    avx = reduce(lambda a, b: a + b, avg_x[:-1]) / len(avg_x[:-1])
+                    avy = reduce(lambda a, b: a + b, avg_y[:-1]) / len(avg_y[:-1])
+                    uavx = avx*0.60 + avg_x[-1]*0.40
+                    uavy = avy*0.70 + avg_y[-1]*0.30
+                    cv2.circle(map,( int(uavx),int(uavy)) ,5,(255,0,0),-1)
+                    #print int((x+w/2)*100/W0),int(_x)
+                    avg_x = [uavx,uavx]
+                    avg_y = [uavy,uavy]
 
             cv2.imshow("Webcam Feed", frame)
             cv2.imshow("Map",map)
-            key = cv2.waitKey(10) & 0xFF
+            key = cv2.waitKey(23) & 0xFF
 
             # if the `q` key is pressed, break from the lop
             if key == ord("q"):
