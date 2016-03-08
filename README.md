@@ -4,7 +4,7 @@
 
 - [ ] Histogram Equalization
 - [x] Write skeleton code : get video feed, track moving object BGSub
-- [ ] Merge close blobs
+- [ ] ~~Merge close blobs~~
 - [ ] Try to guess transform parameters (*bird's eye view*) by trial and error
 - [ ] [Shadow removal](http://infoscience.epfl.ch/record/111781/files/piecewise_shadows.pdf)
 - [ ] Label video dataset 
